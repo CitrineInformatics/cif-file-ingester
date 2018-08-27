@@ -10,9 +10,9 @@ If there are properties contained in your .cif that you would like featurized up
 
 
 ## Example file
-To see an example file please click [here]("https://citrineinformatics.box.com/shared/static/bhevhdse0rzqa9rc4mmqzqli9lkz7hgo.cif").
+To see an example file please click [here](https://citrineinformatics.box.com/shared/static/bhevhdse0rzqa9rc4mmqzqli9lkz7hgo.cif).
 
 ## Resources
-- [CIF file ingester]("https://help.citrination.com/knowledgebase/articles/1200448-citrine-crystallographic-information-file-cif")
+- [CIF file ingester](https://help.citrination.com/knowledgebase/articles/1200448-citrine-crystallographic-information-file-cif)
 - PIF schema [documentation](http://citrineinformatics.github.io/pif-documentation/)
 - PyPIF [repo](https://github.com/CitrineInformatics/pypif)
