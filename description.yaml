@@ -1,0 +1,8 @@
+# This file describes the converter
+name: cif_converter
+namespace: citrine/ingest
+version: auto
+description:  Converts standardized crystallographic information files (.cif) as popularized by the International Union of Crystallography (IUoC).
+displayName: "Citrine: CIF file ingester"
+
+arguments:      # No arguments here

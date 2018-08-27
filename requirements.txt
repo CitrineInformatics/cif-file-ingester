@@ -1,0 +1,2 @@
+pypif==2.1.0
+pymatgen
