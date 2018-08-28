@@ -1,5 +1,7 @@
 from pypif.obj import *
+import ase.io
 from pymatgen import Structure
+from pymatgen.io.ase import AseAtomsAdaptor
 
 def get_crystal_system(structure):
 
@@ -59,9 +61,16 @@ def parse_cif(f):
     ##### Use pymatgen to quickly obtain some information #####
     try:
         structure = Structure.from_file(f)
-    except:
-        print(f, 'is not interpretable by pymatgen')
-        return None
+    except Exception:
+        # Try with ASE instead
+        try:
+            ase_res = ase.io.read(f)
+            assert ase_res
+            # Convert ASE Atoms to Pymatgen Structure
+            structure = AseAtomsAdaptor.get_structure(ase_res)
+        except Exception:
+            print(f, 'is not interpretable by pymatgen or ase')
+            return None
 
     sg, num, bravais = get_crystal_system(structure)
     a, b, c = structure.lattice.abc
