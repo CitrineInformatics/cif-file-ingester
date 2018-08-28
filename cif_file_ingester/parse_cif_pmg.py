@@ -65,7 +65,8 @@ def parse_cif(f):
         # Try with ASE instead
         try:
             ase_res = ase.io.read(f)
-            assert ase_res
+            if not ase_res:
+                raise ValueError("ASE retrieved no data from file")
             # Convert ASE Atoms to Pymatgen Structure
             structure = AseAtomsAdaptor.get_structure(ase_res)
         except Exception:
