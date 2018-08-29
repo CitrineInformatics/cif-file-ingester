@@ -45,6 +45,19 @@ def test_parse_cif():
                 if cond.name == "Radiation type":
                     assert cond.scalars[0].value == 'Mo K-$\\alpha$', 'Incorrect radiation type'
 
+    # Test ASE fallback
+    system = parse_cif('test_files/Ce3VO16.cif')
+    assert system.chemical_formula == 'Ce3VO16', 'Incorrect chemical formula'
+
+    assert len(system.properties) == 14, 'Incorrect number of properties'
+    for prop in system.properties:
+        if prop.name == "Space group symbol":
+            assert len(prop.scalars) == 1, 'Incorrect length'
+            assert prop.scalars[0].value == 'I4_1/amd', 'Incorrect property value'
+        elif prop.name == "Unit cell volume":
+            assert str(prop.scalars[0].value) == '355.625', 'Incorrect unit cell volume'
+
+
 def test_cif_converter():
     '''
     Test that correct number of PIFs are created
