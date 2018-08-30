@@ -9,6 +9,7 @@ setup(name='cif_file_ingester',
     packages=find_packages(),
     install_requires=[
         'pypif>=2.1.0,<3',
+        'ase',
         'pymatgen'
     ],
     entry_points={
