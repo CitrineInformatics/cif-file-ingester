@@ -62,7 +62,7 @@ def test_cif_converter():
     '''
     Test that correct number of PIFs are created
     '''
-    test_files = ['test_files/Al2O3.cif', 'test_files/C13H22O3.cif', 'test_files/diamond.cif']
+    test_files = ['test_files/Al2O3.cif', 'test_files/C13H22O3.cif', 'test_files/C_mp-66_symmetrized.cif']
     systems = convert(test_files)
     assert len(systems) == 3, 'Incorrect number of PIFs'
 
@@ -71,11 +71,14 @@ def test_file_ref():
     '''
     Test that it parses CIFs correctly
     '''
-    system = parse_cif('test_files/diamond.cif')
+    system = parse_cif('test_files/C_mp-66_symmetrized.cif')
     for prop in system.properties:
         if prop.files:
             for ref in prop.files:
                 assert hasattr(ref, 'relative_path') and ref.relative_path != None, "file reference not generated correctly"
+        if prop.name == "Space group symbol":
+            assert prop.scalars[0].value == 'Fd-3m', 'Incorrect property value'
+
 
 
 if __name__ == '__main__':
