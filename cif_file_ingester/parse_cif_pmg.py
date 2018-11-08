@@ -1,4 +1,5 @@
 from pypif.obj import *
+import re
 import ase.io
 from pymatgen import Structure
 from pymatgen.io.ase import AseAtomsAdaptor
@@ -98,19 +99,39 @@ def parse_cif(f):
 
 
     ##### Scan through the CIF to get remaining information #####
-    with open(f, 'r') as cif_file:
+    with open(f, 'r', errors='replace') as cif_file:
         lines = cif_file.readlines()
+        k_maximal = False
         for line in lines:
             if "_chemical_name_systematic" in line and '?' not in line:
                 system.names.append(line.split("_chemical_name_systematic")[1].strip().replace("'", ""))
             if "_journal_paper_doi" in line:
                 system.references.append(Reference(doi=line.split("_journal_paper_doi")[1].strip()))
+            if "_citation_DOI" in line:
+                system.references.append(Reference(doi=line.split("_citation_DOI")[1].strip()))
             if "_exptl_crystal_colour" in line:
                 system.properties.append(Property(name="Crystal color", scalars=[Scalar(line.split("_exptl_crystal_colour")[1].strip().lower().replace('colourless', 'colorless').replace("'", ""))]))
+            if '_transition_temperature' in line:
+                system.properties.append(Property(name='Transition Temperature',scalars=[Scalar(value=line.split('_transition_temperature')[1].strip())],units='K'))
+            if ('k-maximal' in line or 'k maximal' in line) and f.split('.')[-1] == 'mcif':
+                k_maximal = True
+                system.properties.append(Property(name='k-maximal subgroup - classifier',scalars=[Scalar(value=1)]))
+            if '_space_group.magn_ssg_name' in line:
+                system.properties.append(Property(name='Magnetic Superspace Group',scalars=[Scalar(value=line.split('_space_group.magn_ssg_name')[1].strip().strip('"'))]))
+            if '_space_group.magn_point_group_name' in line or '_space_group_magn.point_group_name' in line :
+                system.properties.append(Property(name='Magnetic Point Group',scalars=[Scalar(value=line.split('point_group_name')[1].strip().strip('"'))]))
+            if '_space_group.magn_point_group ' in line:
+                system.properties.append(Property(name='Magnetic Point Group',scalars=[Scalar(value=line.split('_space_group.magn_point_group ')[1].strip().strip('"'))]))
+            if '_space_group_magn.name_BNS' in line or '_space_group.magn_name_BNS' in line:
+                system.properties.append(Property(name='BNS Magnetic Point Group',scalars=[Scalar(value=re.sub(r'\s+','',line.split('name_BNS')[1]).strip('"'))]))
+            if '_transition_temperature' in line or '_Neel_temperature' in line:
+                system.properties.append(Property(name='Transition Temperature',scalars=[Scalar(value=line.split('_temperature')[1].strip())],units='K'))
 
             # Get conditions for previously specified properties
             if "_cell_measurement_temperature" in line:
                 conditions_for_some_props.append(Value(name="Temperature", scalars=[Scalar(line.split("_cell_measurement_temperature")[1].strip())], units="K"))
+            if '_experiment_temperature' in line:
+                conditions_for_some_props.append(Value(name='Experiment Temperature',scalars=[Scalar(value=line.split('_experiment_temperature')[1].strip())],units='K'))
             if "_diffrn_radiation_type" in line:
                 if "MoK\\a" in line.split("_diffrn_radiation_type")[1].strip():
                     conditions_for_some_props.append(Value(name="Radiation type", scalars=[Scalar("Mo K-$\\alpha$")]))
@@ -123,6 +144,8 @@ def parse_cif(f):
                     conditions_for_some_props.append(Value(name="Radiation wavelength", scalars=[Scalar("0"+line.split("_diffrn_radiation_wavelength")[1].strip())], units="$\AA$"))
                 else:
                     conditions_for_some_props.append(Value(name="Radiation wavelength", scalars=[Scalar(line.split("_diffrn_radiation_wavelength")[1].strip())], units="$\AA$"))
+        if not k_maximal and f.split('.')[-1] == 'mcif':
+            system.properties.append(Property(name='k-maximal subgroup - classifier',scalars=[Scalar(value=0)]))
 
     if len(conditions_for_some_props):
         for prop in system.properties:

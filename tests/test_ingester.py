@@ -45,6 +45,26 @@ def test_parse_cif():
                 if cond.name == "Radiation type":
                     assert cond.scalars[0].value == 'Mo K-$\\alpha$', 'Incorrect radiation type'
 
+    # Test mcif fields
+    system = parse_cif('test_files/magndata_0_53.mcif')
+    for prop in system.properties:
+        if prop.name == 'Magnetic Point Group':
+            assert prop.scalars[0].value == "2'/m'", 'Incorrect magnetic point group'
+        if prop.name == 'BNS Magnetic Point Group':
+            assert prop.scalars[0].value == "C2'/m'", 'Incorrect BNS magnetic point group'
+        if prop.name == 'Transition Temperature':
+            assert prop.scalars[0].value == '560', 'Incorrect transition temperature'
+        if prop.name == 'k-maximal subgroup - classifier':
+            assert prop.scalars[0].value == 1, 'Incorrect k-maximal subgroup classifier'
+    
+    system = parse_cif('test_files/magndata_1_1_35.mcif')
+    try:
+        system.properties
+    except AttributeError:
+        pass
+    else:
+        assert system is None, 'Pymatgen does not support incommensurate structures; system should be None type'
+
     # Test ASE fallback
     system = parse_cif('test_files/Ce3VO16.cif')
     assert system.chemical_formula == 'Ce3VO16', 'Incorrect chemical formula'
