@@ -1,6 +1,6 @@
 import sys
 from pypif import pif
-from cif_file_ingester.parse_cif_pmg import parse_cif
+from cif_file_ingester.parse_cif import parse_with_pmg
 
 def convert(files=[], **kwargs):
     """
@@ -12,7 +12,7 @@ def convert(files=[], **kwargs):
     print('Converting {} CIFs'.format(len(files)))
     systems = []
     for f in files:
-        converted_pif = parse_cif(f)
+        converted_pif = parse_with_pmg(f)
         if converted_pif:
             systems.append(converted_pif)
 

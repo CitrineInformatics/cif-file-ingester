@@ -95,7 +95,7 @@ def parse_text(f,system,conditions_for_some_props):
 
     return system, conditions_for_some_props, lines
 
-def parse_cif(f):
+def parse_with_pmg(f):
 
     '''Loads cif file as a pymatgen structure to obtain some properties. Also reads lines in input file for properties
     that are not generated from pymatgen.
