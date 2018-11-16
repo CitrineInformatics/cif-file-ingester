@@ -1,6 +1,6 @@
 import sys
 from pypif import pif
-from .parse_cif_pmg import parse_cif
+from cif_file_ingester.parse_cif_pmg import parse_cif
 
 def convert(files=[], **kwargs):
     """
@@ -20,5 +20,5 @@ def convert(files=[], **kwargs):
 
 
 if __name__ == '__main__':
-    with open(sys.argv[1].replace('.cif','-pif.json'), 'w') as output_file:
+    with open(sys.argv[1].replace('.cif','-pif.json').replace('.mcif','-pif.json'), 'w') as output_file:
         pif.dump(convert(files=[sys.argv[1]]), output_file, indent=4)
