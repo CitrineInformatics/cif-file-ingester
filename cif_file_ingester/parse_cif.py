@@ -36,7 +36,14 @@ def get_crystal_system(structure):
         bravais = 'Cubic'
     return sgroup, num, bravais
 
-def parse_text(f,system,conditions_for_some_props):
+def parse_text(f):
+    system = ChemicalSystem()
+    system.names = []
+    system.properties = []
+    system.references = []
+    conditions_for_some_props = []
+    props = ["Lattice parameter (a)", "Lattice parameter (b)", "Lattice parameter (c)", "Cell angle ($\\alpha$)",
+             "Cell angle ($\\beta$)", "Cell angle ($\\gamma$)", "Unit cell volume", "Density", "Crystal color"]
     ##### Scan through the CIF to get remaining information #####
     if f.endswith('.cif') or f.endswith('.mcif'):
         with open(f, 'r',encoding="ISO-8859-1") as cif_file:
@@ -49,11 +56,13 @@ def parse_text(f,system,conditions_for_some_props):
     
     k_maximal = False
     for line in lines:
+        if '_chemical_formula_sum' in line and '?' not in line:
+            system.chemical_formula = re.sub(r'\s+','',line.split('_chemical_formula_sum')[1].strip()).strip("'")
         if "_chemical_name_systematic" in line and '?' not in line:
             system.names.append(line.split("_chemical_name_systematic")[1].strip().replace("'", ""))
         if "_journal_paper_doi" in line:
             system.references.append(Reference(doi=line.split("_journal_paper_doi")[1].strip()))
-        if "_citation_DOI" in line:
+        if "_citation_DOI" in line and '?' not in line:
             system.references.append(Reference(doi=line.split("_citation_DOI")[1].strip()))
         if "_exptl_crystal_colour" in line:
             system.properties.append(Property(name="Crystal color", scalars=[Scalar(line.split("_exptl_crystal_colour")[1].strip().lower().replace('colourless', 'colorless').replace("'", ""))]))
@@ -93,9 +102,16 @@ def parse_text(f,system,conditions_for_some_props):
     if not k_maximal and f.split('.')[-1] == 'mcif':
         system.properties.append(Property(name='k-maximal subgroup - classifier',scalars=[Scalar(value=0)]))
 
-    return system, conditions_for_some_props, lines
+    system = parse_with_pmg(f,system,lines,conditions_for_some_props)
 
-def parse_with_pmg(f):
+    if len(conditions_for_some_props):
+        for prop in system.properties:
+            if prop.name in props:
+                prop.conditions = conditions_for_some_props
+
+    return system
+
+def parse_with_pmg(f,system,lines,conditions_for_some_props):
 
     '''Loads cif file as a pymatgen structure to obtain some properties. Also reads lines in input file for properties
     that are not generated from pymatgen.
@@ -108,18 +124,7 @@ def parse_with_pmg(f):
         system: ChemicalSystem() with properties extracted from .cif file.
     '''
 
-    system = ChemicalSystem()
-    system.names = []
-    system.properties = []
-    system.references = []
-
-    conditions_for_some_props = []
-    props = ["Lattice parameter (a)", "Lattice parameter (b)", "Lattice parameter (c)", "Cell angle ($\\alpha$)",
-             "Cell angle ($\\beta$)", "Cell angle ($\\gamma$)", "Unit cell volume", "Density", "Crystal color"]
     tol = 3
-
-    ##### Parse Text ####
-    system, conditions_for_some_props, lines = parse_text(f,system,conditions_for_some_props)
 
     ##### Use pymatgen to quickly obtain some information #####
     try:
@@ -127,17 +132,13 @@ def parse_with_pmg(f):
     except Exception:
         # Try with ASE instead
         try:
-            ase_res = ase.io.read(''.join(lines),format='cif')
+            ase_res = ase.io.read(f,format='cif')
             if not ase_res:
                 raise ValueError("ASE retrieved no data from file")
             # Convert ASE Atoms to Pymatgen Structure
             structure = AseAtomsAdaptor.get_structure(ase_res)
         except Exception:
             print(f, 'is not interpretable by pymatgen or ase')
-            if len(conditions_for_some_props):
-                for prop in system.properties:
-                    if prop.name in props:
-                        prop.conditions = conditions_for_some_props
             return system
 
     sg, num, bravais = get_crystal_system(structure)
@@ -162,11 +163,6 @@ def parse_with_pmg(f):
     system.properties.append(Property(name='Charge of unit cell', scalars=[Scalar(value=structure.charge)]))
     system.properties.append(Property(name='Density', scalars=[Scalar(value=round(structure.density, tol))], units="g/cm$^3$"))
     system.properties.append(Property(name='Input file', files=[FileReference(relative_path=f)]))
-
-    if len(conditions_for_some_props):
-        for prop in system.properties:
-            if prop.name in props:
-                prop.conditions = conditions_for_some_props
 
     return system
 
