@@ -1,5 +1,5 @@
 from cif_file_ingester.converter import convert
-from cif_file_ingester.parse_cif_pmg import parse_cif, get_crystal_system
+from cif_file_ingester.parse_cif import parse_with_pmg, get_crystal_system, parse_text
 from pypif import pif
 from pypif.obj import *
 from pymatgen import *
@@ -17,11 +17,11 @@ def test_crystal_system():
     assert bravais == 'Trigonal', 'Incorrect crystal system'
 
 
-def test_parse_cif():
+def test_parse_with_pmg():
     '''
     Test that it parses CIFs correctly
     '''
-    system = parse_cif('test_files/Al2O3.cif')
+    system = parse_text('test_files/Al2O3.cif')
     assert system.chemical_formula == 'Al2O3', 'Incorrect chemical formula'
     assert system.names == ['Aluminium oxide'], 'Incorrect name'
     assert system.references[0].doi == '10.1002/pssa.2210870204'
@@ -35,18 +35,44 @@ def test_parse_cif():
             assert str(prop.scalars[0].value) == '255.033', 'Incorrect unit cell volume'
 
 
-    system = parse_cif('foo')
-    assert system == None, 'Bad files should return None!'
+    try:
+        parse_text('foo')
+    except IOError:
+        pass
+    else:
+        assert False, 'Bad files should return None!'
 
-    system = parse_cif('test_files/C13H22O3.cif')
+    system = parse_text('test_files/C13H22O3.cif')
     for prop in system.properties:
         if prop.conditions:
             for cond in prop.conditions:
                 if cond.name == "Radiation type":
                     assert cond.scalars[0].value == 'Mo K-$\\alpha$', 'Incorrect radiation type'
 
+    # Test mcif fields
+    system = parse_text('test_files/magndata_0_53.mcif')
+    for prop in system.properties:
+        if prop.name == 'Magnetic Point Group':
+            assert prop.scalars[0].value == "2'/m'", 'Incorrect magnetic point group'
+        if prop.name == 'BNS Magnetic Point Group':
+            assert prop.scalars[0].value == "C2'/m'", 'Incorrect BNS magnetic point group'
+        if prop.name == 'Transition Temperature':
+            assert prop.scalars[0].value == '560', 'Incorrect transition temperature'
+        if prop.name == 'k-maximal subgroup - classifier':
+            assert prop.scalars[0].value == 1, 'Incorrect k-maximal subgroup classifier'
+    
+    system = parse_text('test_files/magndata_1_1_35.mcif')
+    for prop in system.properties:
+        print(prop.name)
+        if prop.name == 'Magnetic Point Group':
+            assert prop.scalars[0].value == "2/m1'", 'Incorrect magnetic point group'
+        if prop.name == 'Transition Temperature':
+            assert prop.scalars[0].value == '2.8', 'Incorrect transition temperature'
+        if prop.name == 'k-maximal subgroup - classifier':
+            assert prop.scalars[0].value == 1, 'Incorrect k-maximal subgroup classifier'
+
     # Test ASE fallback
-    system = parse_cif('test_files/Ce3VO16.cif')
+    system = parse_text('test_files/Ce3VO16.cif')
     assert system.chemical_formula == 'Ce3VO16', 'Incorrect chemical formula'
 
     assert len(system.properties) == 14, 'Incorrect number of properties'
@@ -71,7 +97,7 @@ def test_file_ref():
     '''
     Test that it parses CIFs correctly
     '''
-    system = parse_cif('test_files/C_mp-66_symmetrized.cif')
+    system = parse_text('test_files/C_mp-66_symmetrized.cif')
     for prop in system.properties:
         if prop.files:
             for ref in prop.files:
@@ -83,5 +109,5 @@ def test_file_ref():
 
 if __name__ == '__main__':
     test_crystal_system()
-    test_parse_cif()
+    test_parse_with_pmg()
     test_cif_converter()
